@@ -1,20 +1,18 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from wqchartpy import triangle_piper, durvo, stiff
+import matplotlib.colors as mcolors
 
-# === Configuración general de la app ===
 st.set_page_config(page_title="Geoquímica | Diagramas", layout="wide")
-st.title("App de Geoquímica: Diagramas Piper, Durov y Stiff")
+st.title("Análisis Geoquímico: Diagramas Piper, Durov y Stiff")
 st.markdown("""
 Autor: Daniel Osorio Álvarez (dosorioalv@gmail.com).
 Sube tu archivo **Excel (.xlsx)** con datos geoquímicos.  
 Formato recomendado: columnas para Ca, Mg, Na, K, HCO3, CO3, Cl, SO4, pH, TDS, Sample, Label, etc.
 """)
 
-# === Carga del archivo ===
 file = st.file_uploader("Carga tu archivo Excel (.xlsx)", type=['xlsx'])
 
 if file is not None:
@@ -22,13 +20,13 @@ if file is not None:
     st.write("Vista previa de los datos cargados:")
     st.dataframe(df.head())
 
-    # === Definición de columnas esperadas ===
+    # Definición de columnas esperadas
     col_piper = ['Ca', 'Mg', 'Na', 'K', 'HCO3', 'CO3', 'Cl', 'SO4']
     col_durvo = col_piper + ['pH', 'TDS']
     col_aux = ['Label', 'Color', 'Marker', 'Size', 'Alpha']
     col_stiff = ['Ca', 'Mg', 'Na', 'K', 'HCO3', 'Cl', 'SO4', 'Sample', 'Label']
 
-    # === Completa columnas faltantes con valores por defecto ===
+    # Completa columnas faltantes con valores por defecto
     for col in col_durvo:
         if col not in df.columns:
             df[col] = np.nan
@@ -41,24 +39,21 @@ if file is not None:
     if 'Alpha' not in df.columns:
         df['Alpha'] = 1.0
 
-    # === Colores por grupo (solo para Piper y Durov) ===
-    grupo_colores = {
-        "Subterránea": "#1f77b4",
-        "Superficial": "#ff7f0e",
-    }
-    df['Color_piper'] = df['Label'].map(grupo_colores).fillna("#2ca02c")
-    df['Color_durvo'] = df['Label'].map(grupo_colores).fillna("#2ca02c")
+    # Asigna colores automáticos a cada Label
+    unique_labels = df['Label'].unique()
+    cmap = plt.get_cmap('tab10')  # Cambia a 'tab20', 'Set2', etc. si tienes muchos grupos
+    label_to_color = {label: mcolors.rgb2hex(cmap(i % cmap.N)) for i, label in enumerate(unique_labels)}
+    df['Color_piper'] = df['Label'].map(label_to_color)
+    df['Color_durvo'] = df['Label'].map(label_to_color)
 
-    # === Selección del tipo de diagrama ===
+    # Sidebar
     st.sidebar.title("Opciones de gráfico")
     tipo_diagrama = st.sidebar.selectbox("Selecciona el diagrama", ("Piper", "Durov", "Stiff"))
 
-    # === Diagrama Piper ===
     if tipo_diagrama == "Piper":
         df_piper = df[col_piper + ['Label', 'Color_piper', 'Marker', 'Size', 'Alpha']].copy()
         df_piper.rename(columns={'Color_piper': 'Color'}, inplace=True)
         df_piper_plot = df_piper.dropna(subset=col_piper)
-
         if not df_piper_plot.empty:
             plt.close('all')
             triangle_piper.plot(df_piper_plot)
@@ -67,12 +62,10 @@ if file is not None:
         else:
             st.warning("No hay muestras completas para graficar Piper.")
 
-    # === Diagrama Durov ===
     elif tipo_diagrama == "Durov":
         df_durvo = df[col_durvo + ['Label', 'Color_durvo', 'Marker', 'Size', 'Alpha']].copy()
         df_durvo.rename(columns={'Color_durvo': 'Color'}, inplace=True)
         df_durvo_plot = df_durvo.dropna(subset=col_durvo)
-
         if not df_durvo_plot.empty:
             plt.close('all')
             durvo.plot(df_durvo_plot)
@@ -81,25 +74,18 @@ if file is not None:
         else:
             st.warning("No hay muestras completas para graficar Durov.")
 
-    # === Diagrama Stiff (varias figuras por muestra) ===
     elif tipo_diagrama == "Stiff":
         df_stiff = df.copy()
-
-        # Asegura columnas necesarias
         for col in col_stiff:
             if col not in df_stiff.columns:
                 if col == 'Label' and 'Sample' in df_stiff.columns:
                     df_stiff['Label'] = df_stiff['Sample'].astype(str)
                 else:
                     df_stiff[col] = np.nan
-
         df_stiff_plot = df_stiff.dropna(subset=['Ca', 'Mg', 'Na', 'K', 'HCO3', 'Cl', 'SO4', 'Sample'])
-
         if not df_stiff_plot.empty:
             plt.close('all')
             stiff.plot(df_stiff_plot)
-
-            # Mostrar cada figura generada
             for fignum in plt.get_fignums():
                 fig = plt.figure(fignum)
                 st.pyplot(fig)
@@ -107,4 +93,3 @@ if file is not None:
             st.warning("No hay muestras completas para graficar Stiff.")
 else:
     st.info("Carga un archivo Excel para comenzar.")
-
