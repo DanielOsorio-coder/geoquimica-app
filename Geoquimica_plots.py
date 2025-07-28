@@ -1,16 +1,18 @@
-import streamlit as st
+streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from wqchartpy import triangle_piper, durvo, stiff
+from wqchartpy import triangle_piper, durvo, stiff, schoeller  # ← ahora incluye schoeller
 import matplotlib.colors as mcolors
 
 st.set_page_config(page_title="Geoquímica | Diagramas", layout="wide")
-st.title("Análisis Geoquímico: Diagramas Piper, Durov y Stiff")
+st.title("App de Geoquímica: Diagramas Piper, Durov, Stiff y Schoeller")
 st.markdown("""
-Autor: Daniel Osorio Álvarez (dosorioalv@gmail.com).
+Autor: Daniel Osorio Álvarez (dosorioalv@gmail.com).  
 Sube tu archivo **Excel (.xlsx)** con datos geoquímicos.  
 Formato recomendado: columnas para Ca, Mg, Na, K, HCO3, CO3, Cl, SO4, pH, TDS, Sample, Label, etc.
+            
+Se utiliza la librería WQChartPy (Yang, J., Liu, H., Tang, Z., Peeters, L. and Ye, M. (2022), Visualization of Aqueous Geochemical Data Using Python and WQChartPy. Groundwater. https://doi.org/10.1111/gwat.13185)
 """)
 
 file = st.file_uploader("Carga tu archivo Excel (.xlsx)", type=['xlsx'])
@@ -25,6 +27,7 @@ if file is not None:
     col_durvo = col_piper + ['pH', 'TDS']
     col_aux = ['Label', 'Color', 'Marker', 'Size', 'Alpha']
     col_stiff = ['Ca', 'Mg', 'Na', 'K', 'HCO3', 'Cl', 'SO4', 'Sample', 'Label']
+    col_schoeller = col_piper
 
     # Completa columnas faltantes con valores por defecto
     for col in col_durvo:
@@ -48,7 +51,7 @@ if file is not None:
 
     # Sidebar
     st.sidebar.title("Opciones de gráfico")
-    tipo_diagrama = st.sidebar.selectbox("Selecciona el diagrama", ("Piper", "Durov", "Stiff"))
+    tipo_diagrama = st.sidebar.selectbox("Selecciona el diagrama", ("Piper", "Durov", "Stiff", "Schoeller"))
 
     if tipo_diagrama == "Piper":
         df_piper = df[col_piper + ['Label', 'Color_piper', 'Marker', 'Size', 'Alpha']].copy()
@@ -91,5 +94,29 @@ if file is not None:
                 st.pyplot(fig)
         else:
             st.warning("No hay muestras completas para graficar Stiff.")
+
+    elif tipo_diagrama == "Schoeller":
+        df_schoeller = df.copy()
+        required_cols = ['Ca', 'Mg', 'Na', 'K', 'HCO3', 'CO3', 'Cl', 'SO4']
+        for col in required_cols:
+            if col not in df_schoeller.columns:
+                df_schoeller[col] = np.nan
+        if 'Label' not in df_schoeller.columns:
+            df_schoeller['Label'] = df_schoeller['Sample'].astype(str) if 'Sample' in df_schoeller.columns else df_schoeller.index.astype(str)
+        
+        # Asigna colores si no existe columna Color
+        if 'Color' not in df_schoeller.columns:
+            df_schoeller['Color'] = df_schoeller['Label'].map(label_to_color)
+
+        df_schoeller_plot = df_schoeller.dropna(subset=required_cols)
+        if not df_schoeller_plot.empty:
+            plt.close('all')
+            schoeller.plot(df_schoeller_plot, unit='mg/L')
+            fig = plt.gcf()
+            st.pyplot(fig)
+        else:
+            st.warning("No hay muestras completas para graficar Schoeller.")
+
 else:
     st.info("Carga un archivo Excel para comenzar.")
+
