@@ -11,9 +11,25 @@ st.markdown("""
 Autor: Daniel Osorio Álvarez (dosorioalv@gmail.com).  
 Sube tu archivo **Excel (.xlsx)** con datos geoquímicos.  
 Formato recomendado: columnas para Ca, Mg, Na, K, HCO3, CO3, Cl, SO4, pH, TDS, Sample, Label, etc.
-            
+
 Se utiliza la librería WQChartPy (Yang, J., Liu, H., Tang, Z., Peeters, L. and Ye, M. (2022), Visualization of Aqueous Geochemical Data Using Python and WQChartPy. Groundwater. https://doi.org/10.1111/gwat.13185)
 """)
+
+
+st.subheader("Ejemplo de formato de datos para cargar:")
+
+template_path = "prueba_diagramas.xlsx"  # Asegúrate que esté en la misma carpeta
+df_template = pd.read_excel(template_path)
+st.dataframe(df_template.head(10), use_container_width=True)
+
+with open(template_path, "rb") as file_template:
+    st.download_button(
+        label="Descargar archivo de ejemplo (template)",
+        data=file_template,
+        file_name="template_geoquimica.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
 
 file = st.file_uploader("Carga tu archivo Excel (.xlsx)", type=['xlsx'])
 
@@ -119,4 +135,3 @@ if file is not None:
 
 else:
     st.info("Carga un archivo Excel para comenzar.")
-
