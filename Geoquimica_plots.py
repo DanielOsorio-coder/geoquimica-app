@@ -10,7 +10,7 @@ st.title("App de Geoquímica: Diagramas Piper, Durov, Stiff y Schoeller")
 st.markdown("""
 Autor: Daniel Osorio Álvarez (dosorioalv@gmail.com).  
 Sube tu archivo **Excel (.xlsx)** con datos geoquímicos.  
-Formato recomendado: columnas para Ca, Mg, Na, K, HCO3, CO3, Cl, SO4, pH, TDS, Sample, Label, etc.
+Formato requerido: columnas para Ca, Mg, Na, K, HCO3, CO3, Cl, SO4, pH, TDS, Sample, Label, etc.
 
 Se utiliza la librería WQChartPy (Yang, J., Liu, H., Tang, Z., Peeters, L. and Ye, M. (2022), Visualization of Aqueous Geochemical Data Using Python and WQChartPy. Groundwater. https://doi.org/10.1111/gwat.13185)
 """)
